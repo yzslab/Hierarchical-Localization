@@ -25,9 +25,9 @@ parser.add_argument("--import-only", action="store_true", default=False)
 args = parser.parse_args()
 
 image_path = Path(args.image_dir)
-mask_path = args.mask_dir
-if mask_path is not None:
-    mask_path = Path(mask_path)
+# mask_path = args.mask_dir
+# if mask_path is not None:
+    # mask_path = Path(mask_path)
 output_path = Path(args.output_dir)
 os.makedirs(args.output_dir, exist_ok=True)
 
