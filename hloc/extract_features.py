@@ -1,3 +1,4 @@
+import os
 import argparse
 import collections.abc as collections
 import glob
@@ -260,7 +261,7 @@ def main(
     model = Model(conf["model"]).eval().to(device)
 
     loader = torch.utils.data.DataLoader(
-        dataset, num_workers=1, shuffle=False, pin_memory=True
+        dataset, num_workers=min(8, os.cpu_count()), shuffle=False, pin_memory=True
     )
     for idx, data in enumerate(tqdm(loader)):
         name = dataset.names[idx]
