@@ -1,3 +1,4 @@
+import os
 import argparse
 import pprint
 from functools import partial
@@ -11,6 +12,7 @@ import torch
 from tqdm import tqdm
 
 from . import logger, matchers
+from .distibuted_tasks import configure_arg_parser_v2, get_task_list
 from .utils.base_model import dynamic_load
 from .utils.parsers import names_to_pair, names_to_pair_old, parse_retrieval
 
@@ -160,6 +162,8 @@ def main(
     matches: Optional[Path] = None,
     features_ref: Optional[Path] = None,
     overwrite: bool = False,
+    world_size: int = 1,
+    global_rank: int = 1,
 ) -> Path:
     if isinstance(features, Path) or Path(features).exists():
         features_q = features
@@ -178,7 +182,7 @@ def main(
 
     if features_ref is None:
         features_ref = features_q
-    match_from_paths(conf, pairs, matches, features_q, features_ref, overwrite)
+    match_from_paths(conf, pairs, matches, features_q, features_ref, overwrite, world_size, global_rank)
 
     return matches
 
@@ -214,6 +218,8 @@ def match_from_paths(
     feature_path_q: Path,
     feature_path_ref: Path,
     overwrite: bool = False,
+    world_size: int = 1,
+    global_rank: int = 1,
 ) -> Path:
     logger.info(
         "Matching local features with configuration:" f"\n{pprint.pformat(conf)}"
@@ -228,7 +234,26 @@ def match_from_paths(
     assert pairs_path.exists(), pairs_path
     pairs = parse_retrieval(pairs_path)
     pairs = [(q, r) for q, rs in pairs.items() for r in rs]
-    pairs = find_unique_new_pairs(pairs, None if overwrite else match_path)
+
+    pairs, world_size, global_rank = get_task_list(
+        world_size,
+        global_rank,
+        pairs,
+    )
+    if world_size > 1:
+        match_path = Path("{}.{:02d}.{:02d}".format(
+            os.path.join(
+                match_path.parent,
+                "match-chunks",
+                match_path.name
+            ),
+            world_size,
+            global_rank,
+        ))
+        match_path.parent.mkdir(exist_ok=True, parents=True)
+        logger.info("Parallel Mode: #{}, {}".format(global_rank, match_path))
+
+    pairs = find_unique_new_pairs(pairs, None if overwrite else match_path)  # a list of tuples
     if len(pairs) == 0:
         logger.info("Skipping the matching.")
         return
@@ -264,5 +289,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--conf", type=str, default="superglue", choices=list(confs.keys())
     )
+    configure_arg_parser_v2(parser)
     args = parser.parse_args()
-    main(confs[args.conf], args.pairs, args.features, args.export_dir)
+    main(
+        confs[args.conf],
+        args.pairs,
+        args.features,
+        args.export_dir,
+        world_size=args.n_processes,
+        global_rank=args.process_id,
+    )
