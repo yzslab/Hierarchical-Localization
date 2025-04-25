@@ -118,6 +118,8 @@ def main(
     with open(output, "w") as f:
         f.write("\n".join(" ".join([i, j]) for i, j in pairs))
 
+    return pairs
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
