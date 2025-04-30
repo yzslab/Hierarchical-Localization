@@ -240,6 +240,8 @@ def match_from_paths(
         global_rank,
         pairs,
     )
+    pairs = find_unique_new_pairs(pairs, None if overwrite else match_path)  # a list of tuples
+
     if world_size > 1:
         match_path = Path("{}.{:02d}.{:02d}".format(
             os.path.join(
@@ -253,7 +255,6 @@ def match_from_paths(
         match_path.parent.mkdir(exist_ok=True, parents=True)
         logger.info("Parallel Mode: #{}, {}".format(global_rank, match_path))
 
-    pairs = find_unique_new_pairs(pairs, None if overwrite else match_path)  # a list of tuples
     if len(pairs) == 0:
         logger.info("Skipping the matching.")
         return

@@ -29,7 +29,7 @@ output_path = os.path.join(path, "{}.h5".format(name))
 # assert os.path.exists(output_path) is False, output_path
 print(output_path)
 
-with h5py.File(output_path, "w", libver="latest") as dst:
+with h5py.File(output_path, "a", libver="latest") as dst:
     for chunk in tqdm(file_list):
         with h5py.File(chunk, "r", libver="latest") as chunk_f:
             for _, v in tqdm(list(chunk_f.items()), leave=False):
