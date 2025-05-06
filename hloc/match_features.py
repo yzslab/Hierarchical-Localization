@@ -235,12 +235,13 @@ def match_from_paths(
     pairs = parse_retrieval(pairs_path)
     pairs = [(q, r) for q, rs in pairs.items() for r in rs]
 
+    pairs = find_unique_new_pairs(pairs, None if overwrite else match_path)  # a list of tuples
+
     pairs, world_size, global_rank = get_task_list(
         world_size,
         global_rank,
         pairs,
     )
-    pairs = find_unique_new_pairs(pairs, None if overwrite else match_path)  # a list of tuples
 
     if world_size > 1:
         match_path = Path("{}.{:02d}.{:02d}".format(

@@ -20,6 +20,8 @@ def get_task_list(n_processors: int, current_processor_id: int, all_tasks: list,
     assert current_processor_id > 0
     assert current_processor_id <= n_processors
 
+    all_tasks = sorted(all_tasks)
+
     num_tasks_per_process = int(round(len(all_tasks) / n_processors))
     slice_start = (current_processor_id - 1) * num_tasks_per_process
     slice_end = slice_start + num_tasks_per_process
